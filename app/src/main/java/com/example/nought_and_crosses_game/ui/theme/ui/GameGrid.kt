@@ -1,6 +1,7 @@
 package com.example.nought_and_crosses_game.ui.theme.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -19,7 +20,7 @@ import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 
 @Composable
-fun GameGrid(board: List<GameCell>) {
+fun GameGrid(board: List<GameCell>, onCellTapped: (Int) -> Unit) {
     val gridSize = 9
 
     Box(
@@ -43,7 +44,7 @@ fun GameGrid(board: List<GameCell>) {
         var x = 0
         var y = 0
         for (i in 0 until gridSize) {
-            GridCell(x, y, board[i].piece)
+            GridCell(x, y, board[i].piece, { onCellTapped(i) })
             val numberOfRow = i % 3
             if (numberOfRow == 2) {
                 x = 0
@@ -57,7 +58,7 @@ fun GameGrid(board: List<GameCell>) {
 }
 
 @Composable
-fun GridCell(x: Int, y: Int, gamePiece: GamePieces) {
+fun GridCell(x: Int, y: Int, gamePiece: GamePieces, onCellTapped: () -> Unit) {
     val density = LocalDensity.current
     val xInDp = with(density) { x.dp }
     val yInDp = with(density) { y.dp }
@@ -66,7 +67,12 @@ fun GridCell(x: Int, y: Int, gamePiece: GamePieces) {
         GamePieces.Cross -> R.drawable.ic_cross
         else -> null
     }
-    Box(modifier = Modifier.size(80.dp)) {
+    Box(
+        modifier = Modifier
+            .size(80.dp)
+            .clickable {
+                onCellTapped()
+            }) {
         image?.let {
             Image(
                 painter = painterResource(it),
@@ -81,7 +87,7 @@ fun GridCell(x: Int, y: Int, gamePiece: GamePieces) {
 @Composable
 fun GameGridPreview() {
     NoughtandcrossesgameTheme {
-        GameGrid(List(9) { GameCell(GamePieces.Nought, it) })
+        GameGrid(List(9) { GameCell(GamePieces.Nought, it) }, {})
     }
 }
 
@@ -89,6 +95,6 @@ fun GameGridPreview() {
 @Composable
 fun PreviewGridCell() {
     NoughtandcrossesgameTheme {
-        GridCell(0, 0, GamePieces.Nought)
+        GridCell(0, 0, GamePieces.Nought, {})
     }
 }

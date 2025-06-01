@@ -29,4 +29,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             }
         }
     }
+
+    fun updateGrid(position: Int) {
+        viewModelScope.launch {
+            runCatching {
+                repository.updateBoard(position.toString())
+            }
+        }
+    }
 }

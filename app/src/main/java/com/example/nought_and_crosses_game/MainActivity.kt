@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
             NoughtandcrossesgameTheme {
                 viewModel.getBoard()
                 val state = viewModel.state.collectAsState()
-                GameGrid(state.value.gameCells)
+                GameGrid(state.value.gameCells, viewModel::updateGrid)
             }
         }
     }
