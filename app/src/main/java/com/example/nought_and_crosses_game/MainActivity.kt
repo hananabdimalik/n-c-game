@@ -21,7 +21,6 @@ class MainActivity : ComponentActivity() {
             val viewModel =
                 ViewModelProvider(owner = this, viewModelFactory)[GameViewModel::class.java]
             NoughtandcrossesgameTheme {
-                viewModel.getBoard()
                 val state = viewModel.state.collectAsState()
                 GameGrid(state.value.gameCells, viewModel::updateGrid)
             }

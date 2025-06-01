@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.repository.GameRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class GameViewModel(private val repository: GameRepository) : ViewModel() {
@@ -18,14 +20,21 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     val state: StateFlow<State> = _state
 
-    fun getBoard() {
+    init {
+        getGameBoard()
+    }
+
+    private fun getGameBoard() {
         viewModelScope.launch {
-            runCatching {
-                repository.getBoardState("gameBoard")
-            }.onSuccess { result ->
-                _state.update { it.copy(gameCells = result) }
-            }.onFailure {
-                it.stackTrace
+            while (isActive) {
+                runCatching {
+                    repository.getBoardState("gameBoard")
+                }.onSuccess { result ->
+                    _state.update { it.copy(gameCells = result) }
+                }.onFailure {
+                    it.stackTrace
+                }
+                delay(1000)
             }
         }
     }
@@ -33,7 +42,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun updateGrid(position: Int) {
         viewModelScope.launch {
             runCatching {
-                repository.updateBoard(position.toString())
+                repository.updateBoard(position)
             }
         }
     }

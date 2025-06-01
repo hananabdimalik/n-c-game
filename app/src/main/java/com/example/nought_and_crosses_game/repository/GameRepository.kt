@@ -33,5 +33,5 @@ class GameRepository {
         Gson().fromJson<List<GameCell>>(responseJson, object : TypeToken<List<GameCell>>() {}.type)
     }
 
-    fun updateBoard(position: String) = makeRequest("updateBoard/$position")
+    fun updateBoard(position: Int) = makeRequest("updateBoard/$position")
 }

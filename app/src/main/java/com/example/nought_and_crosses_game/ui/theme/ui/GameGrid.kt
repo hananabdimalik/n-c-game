@@ -31,22 +31,27 @@ fun GameGrid(board: List<GameCell>, onCellTapped: (Int) -> Unit) {
         VerticalDivider(
             modifier = Modifier
                 .size(300.dp)
-                .padding(start = 100.dp)
+                .padding(start = 90.dp)
         )
         VerticalDivider(
             modifier = Modifier
                 .size(300.dp)
                 .padding(start = 200.dp)
         )
-        HorizontalDivider(modifier = Modifier.padding(top = 100.dp))
+        HorizontalDivider(modifier = Modifier.padding(top = 90.dp))
         HorizontalDivider(modifier = Modifier.padding(top = 200.dp))
 
         var x = 0
         var y = 0
         for (i in 0 until gridSize) {
-            GridCell(x, y, board[i].piece, { onCellTapped(i) })
-            val numberOfRow = i % 3
-            if (numberOfRow == 2) {
+            GridCell(
+                x = x,
+                y = y,
+                gamePiece = board[i].piece,
+                onCellTapped = { onCellTapped(i) },
+            )
+            val mod = i % 3
+            if (mod == 2) {
                 x = 0
                 y += 100
             } else {
@@ -69,15 +74,16 @@ fun GridCell(x: Int, y: Int, gamePiece: GamePieces, onCellTapped: () -> Unit) {
     }
     Box(
         modifier = Modifier
-            .size(80.dp)
+            .size(90.dp)
+            .offset(x = xInDp, y = yInDp)
             .clickable {
                 onCellTapped()
-            }) {
+            }
+    ) {
         image?.let {
             Image(
                 painter = painterResource(it),
-                contentDescription = null,
-                modifier = Modifier.offset(x = xInDp, y = yInDp)
+                contentDescription = null
             )
         }
     }
@@ -87,7 +93,7 @@ fun GridCell(x: Int, y: Int, gamePiece: GamePieces, onCellTapped: () -> Unit) {
 @Composable
 fun GameGridPreview() {
     NoughtandcrossesgameTheme {
-        GameGrid(List(9) { GameCell(GamePieces.Nought, it) }, {})
+        GameGrid(List(9) { GameCell(GamePieces.Cross, it) }, {})
     }
 }
 
