@@ -16,7 +16,7 @@ class GameRepository {
 
     private fun makeRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {
-            val url = URL("http://0.0.0.0:8080/$path")
+            val url = URL("http://10.0.2.2:8080/$path")
 
             withContext(Dispatchers.IO) {
                 try {
