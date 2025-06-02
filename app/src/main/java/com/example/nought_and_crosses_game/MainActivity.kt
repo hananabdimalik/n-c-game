@@ -22,7 +22,13 @@ class MainActivity : ComponentActivity() {
                 ViewModelProvider(owner = this, viewModelFactory)[GameViewModel::class.java]
             NoughtandcrossesgameTheme {
                 val state = viewModel.state.collectAsState()
-                GameGrid(state.value.gameCells, viewModel::updateGrid, state.value.hasGameEnded)
+                GameGrid(
+                    state.value.gameCells,
+                    viewModel::updateGrid,
+                    state.value.hasGameEnded,
+                    viewModel::onResetTapped,
+                    state.value.gameState
+                )
             }
         }
     }

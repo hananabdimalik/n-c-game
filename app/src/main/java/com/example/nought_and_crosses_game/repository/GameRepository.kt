@@ -13,11 +13,13 @@ import java.net.URL
 import java.nio.charset.Charset
 
 class GameRepository {
-    suspend fun getBoardState(path: String) = makeRequest(path).await()
+    suspend fun getBoardState(): List<GameCell> = makeRequest("gameBoard").await()
 
-    suspend fun updateBoard(position: Int) = makeRequest("updateBoard/$position").await()
+    suspend fun updateBoard(position: Int): List<GameCell> = makeRequest("updateBoard/$position").await()
 
-    suspend fun getGameState() = makeRequestForGameState("/gameState").await()
+    suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
+
+    suspend fun getGameState(): GameState = makeRequestForGameState("gameState").await()
 
     private fun makeRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {

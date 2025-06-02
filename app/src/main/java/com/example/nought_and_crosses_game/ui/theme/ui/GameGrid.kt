@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -22,13 +23,16 @@ import androidx.compose.ui.unit.dp
 import com.example.nought_and_crosses_game.R
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
+import com.example.nought_and_crosses_game.model.GameState
 import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 
 @Composable
 fun GameGrid(
     board: List<GameCell>,
     onCellTapped: (Int) -> Unit,
-    hasGameEnded: Boolean
+    hasGameEnded: Boolean,
+    onResetTapped: () -> Unit,
+    gameState: GameState,
 ) {
     val gridSize = 9
 
@@ -73,7 +77,11 @@ fun GameGrid(
         }
 
         if (hasGameEnded) {
-            Text("Game over", modifier = Modifier.padding(start = 150.dp))
+            Text("Game over: $gameState", modifier = Modifier.padding(start = 150.dp))
+        }
+
+        Button(onResetTapped, modifier = Modifier.padding(start = 130.dp), enabled = hasGameEnded) {
+            Text("Reset Game")
         }
     }
 }
@@ -115,7 +123,7 @@ fun GridCell(
 @Composable
 fun GameGridPreview() {
     NoughtandcrossesgameTheme {
-        GameGrid(List(9) { GameCell(GamePieces.Cross, it) }, {}, true)
+        GameGrid(List(9) { GameCell(GamePieces.Cross, it) }, {}, true, {}, GameState.None)
     }
 }
 

@@ -26,9 +26,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     val state: StateFlow<State> = _state
 
     init {
-        getGameBoard()
         // only check gameState if game is still going
         if (state.value.gameState == GameState.None) {
+            getGameBoard()
             getGameState()
         }
     }
@@ -37,14 +37,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         viewModelScope.launch {
             while (isActive) {
                 runCatching {
-                    repository.getBoardState("gameBoard")
+                    repository.getBoardState()
                 }.onSuccess { result ->
                     _state.update { it.copy(gameCells = result) }
                 }.onFailure {
                     // handle failure
                     it.stackTrace
                 }
-                delay(1000)
+                delay(500)
             }
         }
     }
@@ -62,7 +62,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     // handle failure
                 }
             }
-            delay(1000)
+            delay(500)
         }
     }
 
@@ -70,6 +70,24 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching {
                 repository.updateBoard(position)
+            }
+        }
+    }
+
+    fun onResetTapped() {
+        viewModelScope.launch {
+            runCatching {
+                repository.resetGameBoard()
+            }.onSuccess { result ->
+                _state.update {
+                    it.copy(
+                        gameCells = result,
+                        hasGameEnded = false,
+                        gameState = GameState.None
+                    )
+                }
+            }.onFailure {
+
             }
         }
     }
