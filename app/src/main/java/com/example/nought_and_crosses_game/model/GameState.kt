@@ -5,3 +5,7 @@ enum class GamePieces {
 }
 
 data class GameCell(val piece: GamePieces, val position: Int)
+
+enum class GameState {
+    Win, Draw, None
+}

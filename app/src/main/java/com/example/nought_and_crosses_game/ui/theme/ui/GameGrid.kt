@@ -1,15 +1,20 @@
 package com.example.nought_and_crosses_game.ui.theme.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,50 +25,67 @@ import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 
 @Composable
-fun GameGrid(board: List<GameCell>, onCellTapped: (Int) -> Unit) {
+fun GameGrid(
+    board: List<GameCell>,
+    onCellTapped: (Int) -> Unit,
+    hasGameEnded: Boolean
+) {
     val gridSize = 9
 
-    Box(
-        modifier = Modifier
-            .padding(top = 100.dp, start = 40.dp, end = 60.dp)
-            .size(height = 300.dp, width = 600.dp)
-    ) {
-        VerticalDivider(
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Box(
             modifier = Modifier
-                .size(300.dp)
-                .padding(start = 90.dp)
-        )
-        VerticalDivider(
-            modifier = Modifier
-                .size(300.dp)
-                .padding(start = 200.dp)
-        )
-        HorizontalDivider(modifier = Modifier.padding(top = 90.dp))
-        HorizontalDivider(modifier = Modifier.padding(top = 200.dp))
-
-        var x = 0
-        var y = 0
-        for (i in 0 until gridSize) {
-            GridCell(
-                x = x,
-                y = y,
-                gamePiece = board[i].piece,
-                onCellTapped = { onCellTapped(i) },
+                .padding(top = 100.dp, start = 40.dp, end = 60.dp)
+                .size(height = 300.dp, width = 600.dp)
+                .background(if (hasGameEnded) Color.LightGray else Color.Unspecified)
+        ) {
+            VerticalDivider(
+                modifier = Modifier
+                    .size(300.dp)
+                    .padding(start = 90.dp)
             )
-            val mod = i % 3
-            if (mod == 2) {
-                x = 0
-                y += 100
-            } else {
-                x += 100
+            VerticalDivider(
+                modifier = Modifier
+                    .size(300.dp)
+                    .padding(start = 200.dp)
+            )
+            HorizontalDivider(modifier = Modifier.padding(top = 90.dp))
+            HorizontalDivider(modifier = Modifier.padding(top = 200.dp))
+
+            var x = 0
+            var y = 0
+            for (i in 0 until gridSize) {
+                GridCell(
+                    x = x,
+                    y = y,
+                    gamePiece = board[i].piece,
+                    onCellTapped = { onCellTapped(i) },
+                    hasGameEnded = hasGameEnded
+                )
+                val mod = i % 3
+                if (mod == 2) {
+                    x = 0
+                    y += 100
+                } else {
+                    x += 100
+                }
             }
         }
-    }
 
+        if (hasGameEnded) {
+            Text("Game over", modifier = Modifier.padding(start = 150.dp))
+        }
+    }
 }
 
 @Composable
-fun GridCell(x: Int, y: Int, gamePiece: GamePieces, onCellTapped: () -> Unit) {
+fun GridCell(
+    x: Int,
+    y: Int,
+    gamePiece: GamePieces,
+    onCellTapped: () -> Unit,
+    hasGameEnded: Boolean
+) {
     val density = LocalDensity.current
     val xInDp = with(density) { x.dp }
     val yInDp = with(density) { y.dp }
@@ -76,7 +98,7 @@ fun GridCell(x: Int, y: Int, gamePiece: GamePieces, onCellTapped: () -> Unit) {
         modifier = Modifier
             .size(90.dp)
             .offset(x = xInDp, y = yInDp)
-            .clickable {
+            .clickable(enabled = !hasGameEnded) {
                 onCellTapped()
             }
     ) {
@@ -93,7 +115,7 @@ fun GridCell(x: Int, y: Int, gamePiece: GamePieces, onCellTapped: () -> Unit) {
 @Composable
 fun GameGridPreview() {
     NoughtandcrossesgameTheme {
-        GameGrid(List(9) { GameCell(GamePieces.Cross, it) }, {})
+        GameGrid(List(9) { GameCell(GamePieces.Cross, it) }, {}, true)
     }
 }
 
@@ -101,6 +123,6 @@ fun GameGridPreview() {
 @Composable
 fun PreviewGridCell() {
     NoughtandcrossesgameTheme {
-        GridCell(0, 0, GamePieces.Nought, {})
+        GridCell(0, 0, GamePieces.Nought, {}, false)
     }
 }

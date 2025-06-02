@@ -1,6 +1,7 @@
 package com.example.nought_and_crosses_game.repository
 
 import com.example.nought_and_crosses_game.model.GameCell
+import com.example.nought_and_crosses_game.model.GameState
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +14,10 @@ import java.nio.charset.Charset
 
 class GameRepository {
     suspend fun getBoardState(path: String) = makeRequest(path).await()
+
+    suspend fun updateBoard(position: Int) = makeRequest("updateBoard/$position").await()
+
+    suspend fun getGameState() = makeRequestForGameState("/gameState").await()
 
     private fun makeRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {
@@ -33,5 +38,21 @@ class GameRepository {
         Gson().fromJson<List<GameCell>>(responseJson, object : TypeToken<List<GameCell>>() {}.type)
     }
 
-    fun updateBoard(position: Int) = makeRequest("updateBoard/$position")
+    private fun makeRequestForGameState(path: String) = CoroutineScope(Dispatchers.Main).async {
+
+        val url = URL("http://10.0.2.2:8080/$path")
+
+        val response = withContext(Dispatchers.IO) {
+            try {
+                val urlConnection = url.openConnection()
+                val inputStream = urlConnection.getInputStream()
+                inputStream.bufferedReader(Charset.forName("UTF-8")).use { it.readText() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
+            }
+        }
+
+        Gson().fromJson<GameState>(response, object : TypeToken<GameState>() {}.type)
+    }
 }
