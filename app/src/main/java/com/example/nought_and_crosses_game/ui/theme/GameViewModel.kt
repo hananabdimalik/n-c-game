@@ -30,6 +30,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (state.value.gameState == GameState.None) {
             getGameBoard()
             getGameState()
+            sendUsername() // only ask for username if game hasnt started
         }
     }
 
@@ -88,6 +89,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 }
             }.onFailure {
 
+            }
+        }
+    }
+
+    fun sendUsername(){
+        viewModelScope.launch {
+            runCatching {
+                repository.addUserToGame()
             }
         }
     }

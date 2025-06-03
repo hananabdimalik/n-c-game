@@ -9,17 +9,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.IOUtils
+import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
 
 class GameRepository {
     suspend fun getBoardState(): List<GameCell> = makeRequest("gameBoard").await()
 
-    suspend fun updateBoard(position: Int): List<GameCell> = makeRequest("updateBoard/$position").await()
+    suspend fun updateBoard(position: Int): List<GameCell> =
+        makeRequest("updateBoard/$position").await()
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
     suspend fun getGameState(): GameState = makeRequestForGameState("gameState").await()
+
+    suspend fun addUserToGame() = postPlayerName("Bob", "join")
 
     private fun makeRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {
@@ -57,4 +61,36 @@ class GameRepository {
 
         Gson().fromJson<GameState>(response, object : TypeToken<GameState>() {}.type)
     }
+
+    private fun postPlayerName(name: String, path: String) =
+        CoroutineScope(Dispatchers.Main).async {
+
+            val url = URL("http://10.0.2.2:8080/$path")
+            val connection = url.openConnection() as HttpURLConnection
+
+            val response = withContext(Dispatchers.IO) {
+                try {
+                    connection.requestMethod = "POST"
+                    connection.setRequestProperty("Content-Type", "application/json")
+                    connection.doOutput = true
+
+                    connection.outputStream.use { output ->
+                        output.write(
+                            name.toByteArray(
+                                Charset.forName(
+                                    "UTF-8"
+                                )
+                            )
+                        )
+                    }
+
+                    connection.inputStream.bufferedReader().use { it.readText() }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    throw e
+                }
+            }
+
+            Gson().fromJson<String>(response, object : TypeToken<String>() {}.type)
+        }
 }
