@@ -1,6 +1,7 @@
 package com.example.nought_and_crosses_game.repository
 
 import com.example.nought_and_crosses_game.model.GameCell
+import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.GameState
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -23,7 +24,7 @@ class GameRepository {
 
     suspend fun getGameState(): GameState = makeRequestForGameState("gameState").await()
 
-    suspend fun addUserToGame() = postPlayerName("Bob", "join")
+    suspend fun addUserToGame(name: String) = postPlayerName(name, "join").await()
 
     private fun makeRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {
@@ -91,6 +92,6 @@ class GameRepository {
                 }
             }
 
-            Gson().fromJson<String>(response, object : TypeToken<String>() {}.type)
+            Gson().fromJson<GameSession>(response, object : TypeToken<GameSession>() {}.type)
         }
 }

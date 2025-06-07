@@ -6,12 +6,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,25 +26,31 @@ import androidx.compose.ui.unit.dp
 import com.example.nought_and_crosses_game.R
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
+import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.GameState
+import com.example.nought_and_crosses_game.ui.theme.GameViewModel
 import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 
 @Composable
 fun GameGrid(
     board: List<GameCell>,
     onCellTapped: (Int) -> Unit,
-    hasGameEnded: Boolean,
     onResetTapped: () -> Unit,
     gameState: GameState,
+    onValueChanged: (String) -> Unit,
+    onJoinTapped: () -> Unit,
+    state: GameViewModel.State
 ) {
     val gridSize = 9
 
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        AddPlayer(state, onValueChanged, onJoinTapped)
+
         Box(
             modifier = Modifier
-                .padding(top = 100.dp, start = 40.dp, end = 60.dp)
+                .padding(top = 50.dp, start = 40.dp, end = 60.dp)
                 .size(height = 300.dp, width = 600.dp)
-                .background(if (hasGameEnded) Color.LightGray else Color.Unspecified)
+                .background(if (state.gameSession?.hasGameBegan == false && state.gameState != GameState.None) Color.LightGray else Color.Unspecified)
         ) {
             VerticalDivider(
                 modifier = Modifier
@@ -64,7 +73,7 @@ fun GameGrid(
                     y = y,
                     gamePiece = board[i].piece,
                     onCellTapped = { onCellTapped(i) },
-                    hasGameEnded = hasGameEnded
+                    hasGameBegan = state.gameSession?.hasGameBegan != true && state.gameState != GameState.None
                 )
                 val mod = i % 3
                 if (mod == 2) {
@@ -76,12 +85,53 @@ fun GameGrid(
             }
         }
 
-        if (hasGameEnded) {
+        if (state.gameSession?.hasGameBegan == false && state.gameSession.players.isNotEmpty() && state.gameState != GameState.None) {
             Text("Game over: $gameState", modifier = Modifier.padding(start = 150.dp))
         }
 
-        Button(onResetTapped, modifier = Modifier.padding(start = 130.dp), enabled = hasGameEnded) {
+        Button(
+            onResetTapped,
+            modifier = Modifier.padding(start = 130.dp),
+            enabled = state.gameSession?.hasGameBegan == false
+        ) {
             Text("Reset Game")
+        }
+    }
+}
+
+@Composable
+private fun AddPlayer(
+    state: GameViewModel.State,
+    onValueChanged: (String) -> Unit,
+    onJoinTapped: () -> Unit
+) {
+    Row(modifier = Modifier.padding(top = 50.dp)) {
+        TextField(
+            value = state.input ?: "",
+            onValueChange = onValueChanged,
+            modifier = Modifier
+                .size(width = 250.dp, height = 80.dp)
+                .padding(start = 40.dp, top = 20.dp),
+            singleLine = true
+        )
+        Spacer(Modifier.weight(1f))
+        Button(onJoinTapped, modifier = Modifier.padding(top = 15.dp, end = 20.dp)) {
+            Text("Join")
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .padding(start = 125.dp, top = 10.dp)
+            .background(Color.LightGray)
+    ) {
+        val players = state.gameSession?.players
+        if (!players.isNullOrEmpty()) {
+            Text("${players[0]}     VS")
+            Spacer(modifier = Modifier.size(20.dp))
+            if (players.size > 1) {
+                Text(players[1])
+            }
         }
     }
 }
@@ -92,7 +142,7 @@ fun GridCell(
     y: Int,
     gamePiece: GamePieces,
     onCellTapped: () -> Unit,
-    hasGameEnded: Boolean
+    hasGameBegan: Boolean
 ) {
     val density = LocalDensity.current
     val xInDp = with(density) { x.dp }
@@ -106,7 +156,7 @@ fun GridCell(
         modifier = Modifier
             .size(90.dp)
             .offset(x = xInDp, y = yInDp)
-            .clickable(enabled = !hasGameEnded) {
+            .clickable(enabled = !hasGameBegan) {
                 onCellTapped()
             }
     ) {
@@ -123,7 +173,15 @@ fun GridCell(
 @Composable
 fun GameGridPreview() {
     NoughtandcrossesgameTheme {
-        GameGrid(List(9) { GameCell(GamePieces.Cross, it) }, {}, true, {}, GameState.None)
+        GameGrid(
+            board = List(9) { GameCell(GamePieces.Cross, it) },
+            onCellTapped = {},
+            onResetTapped = {},
+            gameState = GameState.None,
+            onValueChanged = {},
+            onJoinTapped = {},
+            state = GameViewModel.State(gameSession = GameSession(listOf("Bob", "Dylan"))),
+        )
     }
 }
 

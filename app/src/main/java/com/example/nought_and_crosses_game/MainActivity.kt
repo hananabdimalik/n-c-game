@@ -23,11 +23,13 @@ class MainActivity : ComponentActivity() {
             NoughtandcrossesgameTheme {
                 val state = viewModel.state.collectAsState()
                 GameGrid(
-                    state.value.gameCells,
-                    viewModel::updateGrid,
-                    state.value.hasGameEnded,
-                    viewModel::onResetTapped,
-                    state.value.gameState
+                    board = state.value.gameCells,
+                    onCellTapped = viewModel::updateGrid,
+                    onResetTapped = viewModel::onResetTapped,
+                    gameState = state.value.gameState,
+                    onValueChanged = viewModel::onValueChanged,
+                    onJoinTapped = viewModel::onJoinTapped,
+                    state = state.value
                 )
             }
         }

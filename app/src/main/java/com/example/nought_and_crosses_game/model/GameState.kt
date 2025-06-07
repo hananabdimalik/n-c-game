@@ -9,3 +9,9 @@ data class GameCell(val piece: GamePieces, val position: Int)
 enum class GameState {
     Win, Draw, None
 }
+
+data class GameSession(
+    val players: List<String> = emptyList(),
+    val hasGameBegan: Boolean = false,
+    val gameState: GameState = GameState.None
+)

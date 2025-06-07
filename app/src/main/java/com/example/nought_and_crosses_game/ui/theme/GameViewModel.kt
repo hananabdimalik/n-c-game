@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
+import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.GameState
 import com.example.nought_and_crosses_game.repository.GameRepository
 import kotlinx.coroutines.delay
@@ -16,9 +17,10 @@ import kotlinx.coroutines.launch
 class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     data class State(
+        val input: String? = null,
+        val gameSession: GameSession? = null,
         val gameCells: List<GameCell> = List(9) { GameCell(GamePieces.Unplayed, it) },
-        val gameState: GameState = GameState.None,
-        val hasGameEnded: Boolean = false
+        val gameState: GameState = GameState.None
     )
 
     private val _state = MutableStateFlow(State())
@@ -30,7 +32,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (state.value.gameState == GameState.None) {
             getGameBoard()
             getGameState()
-            sendUsername() // only ask for username if game hasnt started
+            onJoinTapped() // only ask for username if game hasnt started
         }
     }
 
@@ -57,7 +59,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     repository.getGameState()
                 }.onSuccess { gameState ->
                     if (gameState != GameState.None) {
-                        _state.update { it.copy(hasGameEnded = true, gameState = gameState) }
+                        _state.update {
+                            it.copy(
+                                gameState = gameState,
+                                gameSession = state.value.gameSession?.copy(hasGameBegan = false)
+                            )
+                        }
                     }
                 }.onFailure {
                     // handle failure
@@ -83,21 +90,31 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 _state.update {
                     it.copy(
                         gameCells = result,
-                        hasGameEnded = false,
-                        gameState = GameState.None
+                        gameState = GameState.None,
+                        gameSession = state.value.gameSession?.copy(hasGameBegan = false)
                     )
                 }
             }.onFailure {
-
+                // handle failure
             }
         }
     }
 
-    fun sendUsername(){
+    fun onJoinTapped() {
         viewModelScope.launch {
             runCatching {
-                repository.addUserToGame()
+                state.value.input?.let { repository.addUserToGame(it) }
+            }.onSuccess { gameSession ->
+                _state.update { it.copy(gameSession = gameSession, input = null) }
+            }.onFailure {
+                it.stackTrace
             }
+        }
+    }
+
+    fun onValueChanged(input: String) {
+        if (input.isNotEmpty()) {
+            _state.update { it.copy(input = input) }
         }
     }
 }
