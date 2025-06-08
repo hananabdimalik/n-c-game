@@ -36,7 +36,6 @@ fun GameGrid(
     board: List<GameCell>,
     onCellTapped: (Int) -> Unit,
     onResetTapped: () -> Unit,
-    gameState: GameState,
     onValueChanged: (String) -> Unit,
     onJoinTapped: () -> Unit,
     state: GameViewModel.State
@@ -50,7 +49,7 @@ fun GameGrid(
             modifier = Modifier
                 .padding(top = 50.dp, start = 40.dp, end = 60.dp)
                 .size(height = 300.dp, width = 600.dp)
-                .background(if (state.gameSession?.hasGameBegan == false && state.gameState != GameState.None) Color.LightGray else Color.Unspecified)
+                .background(if (state.gameSession?.hasGameBegan == false && state.gameSession.gameState != GameState.None) Color.LightGray else Color.Unspecified)
         ) {
             VerticalDivider(
                 modifier = Modifier
@@ -73,7 +72,7 @@ fun GameGrid(
                     y = y,
                     gamePiece = board[i].piece,
                     onCellTapped = { onCellTapped(i) },
-                    hasGameBegan = state.gameSession?.hasGameBegan != true && state.gameState != GameState.None
+                    hasGameBegan = state.gameSession?.hasGameBegan != true && state.gameSession?.gameState != GameState.None
                 )
                 val mod = i % 3
                 if (mod == 2) {
@@ -85,8 +84,8 @@ fun GameGrid(
             }
         }
 
-        if (state.gameSession?.hasGameBegan == false && state.gameSession.players.isNotEmpty() && state.gameState != GameState.None) {
-            Text("Game over: $gameState", modifier = Modifier.padding(start = 150.dp))
+        if (state.gameSession?.hasGameBegan == false && state.gameSession.players.isNotEmpty() && state.gameSession.gameState != GameState.None) {
+            Text("Game over: ${state.gameSession.gameState}", modifier = Modifier.padding(start = 150.dp))
         }
 
         Button(
@@ -177,7 +176,6 @@ fun GameGridPreview() {
             board = List(9) { GameCell(GamePieces.Cross, it) },
             onCellTapped = {},
             onResetTapped = {},
-            gameState = GameState.None,
             onValueChanged = {},
             onJoinTapped = {},
             state = GameViewModel.State(gameSession = GameSession(listOf("Bob", "Dylan"))),

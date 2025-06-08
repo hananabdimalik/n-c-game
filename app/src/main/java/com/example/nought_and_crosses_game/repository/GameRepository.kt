@@ -22,9 +22,6 @@ class GameRepository {
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
-    // remove this as it comes from gameSession now
-    suspend fun getGameState(): GameState = makeRequestForGameState("gameState").await()
-
     suspend fun addUserToGame(name: String): GameSession = postPlayerName(name, "join").await()
 
     suspend fun getGameSession(): GameSession = makeGameSessionRequest().await()
@@ -65,24 +62,6 @@ class GameRepository {
         val responseJson = deferred.await()
 
         Gson().fromJson<List<GameCell>>(responseJson, object : TypeToken<List<GameCell>>() {}.type)
-    }
-
-    private fun makeRequestForGameState(path: String) = CoroutineScope(Dispatchers.Main).async {
-
-        val url = URL("http://10.0.2.2:8080/$path")
-
-        val response = withContext(Dispatchers.IO) {
-            try {
-                val urlConnection = url.openConnection()
-                val inputStream = urlConnection.getInputStream()
-                inputStream.bufferedReader(Charset.forName("UTF-8")).use { it.readText() }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                throw e
-            }
-        }
-
-        Gson().fromJson<GameState>(response, object : TypeToken<GameState>() {}.type)
     }
 
     private fun postPlayerName(name: String, path: String) =

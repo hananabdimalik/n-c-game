@@ -26,7 +26,6 @@ class MainActivity : ComponentActivity() {
                     board = state.value.gameCells,
                     onCellTapped = viewModel::updateGrid,
                     onResetTapped = viewModel::onResetTapped,
-                    gameState = state.value.gameState,
                     onValueChanged = viewModel::onValueChanged,
                     onJoinTapped = viewModel::onJoinTapped,
                     state = state.value

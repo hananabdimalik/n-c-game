@@ -31,18 +31,24 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         // only check gameState if game is still going
         if (state.value.gameState == GameState.None) {
             getGameBoard()
-            getGameState()
+        }
+
+        if (state.value.gameSession?.hasGameBegan == false) {
             onJoinTapped() // only ask for username if game hasnt started
         }
-        if (state.value.gameSession == null && state.value.gameState == GameState.None) {
+
+        if (state.value.gameSession == null) { // double check this
             loadGameSession()
+        }
+
+        if (state.value.gameSession?.gameState != GameState.None) {
+            updateGameState()
         }
     }
 
     private fun loadGameSession() {
         viewModelScope.launch {
             while (isActive) {
-                delay(1000)
                 runCatching {
                     repository.getGameSession()
                 }.onSuccess { result ->
@@ -58,6 +64,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
 
+    private fun updateGameState() {
+        _state.update { it.copy(gameSession = state.value.gameSession) }
+    }
+
     private fun getGameBoard() {
         viewModelScope.launch {
             while (isActive) {
@@ -71,28 +81,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 }
                 delay(500)
             }
-        }
-    }
-
-    private fun getGameState() {
-        viewModelScope.launch {
-            while (isActive) {
-                runCatching {
-                    repository.getGameState()
-                }.onSuccess { gameState ->
-                    if (gameState != GameState.None) {
-                        _state.update {
-                            it.copy(
-                                gameState = gameState,
-                                gameSession = state.value.gameSession?.copy(hasGameBegan = false)
-                            )
-                        }
-                    }
-                }.onFailure {
-                    // handle failure
-                }
-            }
-            delay(500)
         }
     }
 
