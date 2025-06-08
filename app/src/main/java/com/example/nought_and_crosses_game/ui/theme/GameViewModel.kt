@@ -6,6 +6,7 @@ import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.GameState
+import com.example.nought_and_crosses_game.model.Player
 import com.example.nought_and_crosses_game.repository.GameRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
@@ -26,6 +28,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _state = MutableStateFlow(State())
 
     val state: StateFlow<State> = _state
+    private val id = UUID.randomUUID().toString()
 
     init {
         // only check gameState if game is still going
@@ -108,12 +111,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 // handle failure
             }
         }
-    }
+    } // should this be tappable if there's one player?
 
     fun onJoinTapped() {
         viewModelScope.launch {
             runCatching {
-                state.value.input?.let { repository.addUserToGame(it) }
+                state.value.input?.let {
+                    val player =
+                        Player(name = it, id = id, gamePiece = GamePieces.Unplayed)
+                    state.value.input?.let { repository.addPlayer(player) }
+                }
             }.onSuccess { gameSession ->
                 _state.update { it.copy(gameSession = gameSession, input = null) }
             }.onFailure {

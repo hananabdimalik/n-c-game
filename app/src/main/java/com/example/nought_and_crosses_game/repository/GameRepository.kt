@@ -2,7 +2,7 @@ package com.example.nought_and_crosses_game.repository
 
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GameSession
-import com.example.nought_and_crosses_game.model.GameState
+import com.example.nought_and_crosses_game.model.Player
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +22,8 @@ class GameRepository {
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
-    suspend fun addUserToGame(name: String): GameSession = postPlayerName(name, "join").await()
+    suspend fun addPlayer(player: Player): GameSession = addPlayer(player, "join")
+        .await()
 
     suspend fun getGameSession(): GameSession = makeGameSessionRequest().await()
 
@@ -64,9 +65,9 @@ class GameRepository {
         Gson().fromJson<List<GameCell>>(responseJson, object : TypeToken<List<GameCell>>() {}.type)
     }
 
-    private fun postPlayerName(name: String, path: String) =
+    private fun addPlayer(player: Player, path: String) =
         CoroutineScope(Dispatchers.Main).async {
-
+            val gson = Gson()
             val url = URL("http://10.0.2.2:8080/$path")
             val connection = url.openConnection() as HttpURLConnection
 
@@ -76,13 +77,16 @@ class GameRepository {
                     connection.setRequestProperty("Content-Type", "application/json")
                     connection.doOutput = true
 
+
+                    val jsonBody = gson.toJson(player)
                     connection.outputStream.use { output ->
                         output.write(
-                            name.toByteArray(
-                                Charset.forName(
-                                    "UTF-8"
+                            jsonBody.toString()
+                                .toByteArray(
+                                    Charset.forName(
+                                        "UTF-8"
+                                    )
                                 )
-                            )
                         )
                     }
 
@@ -93,6 +97,6 @@ class GameRepository {
                 }
             }
 
-            Gson().fromJson<GameSession>(response, object : TypeToken<GameSession>() {}.type)
+            gson.fromJson<GameSession>(response, object : TypeToken<GameSession>() {}.type)
         }
 }

@@ -28,6 +28,7 @@ import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.GameState
+import com.example.nought_and_crosses_game.model.Player
 import com.example.nought_and_crosses_game.ui.theme.GameViewModel
 import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 
@@ -85,7 +86,10 @@ fun GameGrid(
         }
 
         if (state.gameSession?.hasGameBegan == false && state.gameSession.players.isNotEmpty() && state.gameSession.gameState != GameState.None) {
-            Text("Game over: ${state.gameSession.gameState}", modifier = Modifier.padding(start = 150.dp))
+            Text(
+                text = "Game over: ${state.gameSession.gameState}",
+                modifier = Modifier.padding(start = 150.dp)
+            )
         }
 
         Button(
@@ -126,10 +130,10 @@ private fun AddPlayer(
     ) {
         val players = state.gameSession?.players
         if (!players.isNullOrEmpty()) {
-            Text("${players[0]}     VS")
+            Text("${players[0].name}     VS")
             Spacer(modifier = Modifier.size(20.dp))
             if (players.size > 1) {
-                Text(players[1])
+                Text(players[1].name)
             }
         }
     }
@@ -178,7 +182,17 @@ fun GameGridPreview() {
             onResetTapped = {},
             onValueChanged = {},
             onJoinTapped = {},
-            state = GameViewModel.State(gameSession = GameSession(listOf("Bob", "Dylan"))),
+            state = GameViewModel.State(
+                gameSession = GameSession(
+                    listOf(
+                        Player(
+                            "player1",
+                            "player2",
+                            GamePieces.Unplayed
+                        )
+                    )
+                )
+            ),
         )
     }
 }
