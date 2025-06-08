@@ -90,7 +90,7 @@ fun GameGrid(
         }
 
         Button(
-            onResetTapped,
+            onClick = onResetTapped,
             modifier = Modifier.padding(start = 130.dp),
             enabled = state.gameSession?.hasGameBegan == false
         ) {

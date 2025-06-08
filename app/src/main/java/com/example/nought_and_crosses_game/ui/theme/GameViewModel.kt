@@ -34,6 +34,28 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             getGameState()
             onJoinTapped() // only ask for username if game hasnt started
         }
+        if (state.value.gameSession == null && state.value.gameState == GameState.None) {
+            loadGameSession()
+        }
+    }
+
+    private fun loadGameSession() {
+        viewModelScope.launch {
+            while (isActive) {
+                delay(1000)
+                runCatching {
+                    repository.getGameSession()
+                }.onSuccess { result ->
+                    _state.update {
+                        it.copy(
+                            gameSession = result,
+                        )
+                    }
+                }.onFailure {
+                    // handle failure -> throw an exception and translate to a dialog
+                }
+            }
+        }
     }
 
     private fun getGameBoard() {
@@ -114,7 +136,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     fun onValueChanged(input: String) {
         if (input.isNotEmpty()) {
-            _state.update { it.copy(input = input) }
+            _state.update { it.copy(input = input.replaceFirstChar { letter -> letter.uppercase() }) } // capitalise first letter
         }
     }
 }
