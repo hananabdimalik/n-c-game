@@ -17,8 +17,8 @@ import java.nio.charset.Charset
 class GameRepository {
     suspend fun getBoardState(): List<GameCell> = makeRequest("gameBoard").await()
 
-    suspend fun updateBoard(position: Int): List<GameCell> =
-        makeRequest("updateBoard/$position").await()
+    suspend fun updateBoard(player: Player, position: Int): List<GameCell> =
+        updateBoardPostRequest(player, "updateBoard/$position").await()
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
@@ -45,6 +45,41 @@ class GameRepository {
         val response = deferred.await()
         Gson().fromJson<GameSession>(response, object : TypeToken<GameSession>() {}.type)
     }
+
+    private fun updateBoardPostRequest(player: Player, path: String) =
+        CoroutineScope(Dispatchers.Main).async {
+            val gson = Gson()
+            val deferred = async {
+                val url = URL("http://10.0.2.2:8080/$path")
+                val connection = url.openConnection() as HttpURLConnection
+
+                withContext(Dispatchers.IO) {
+                    try {
+                        connection.requestMethod = "POST"
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        connection.doOutput = true
+
+                        val jsonBody = gson.toJson(player)
+                        connection.outputStream.use {
+                            it.write(
+                                jsonBody.toByteArray(
+                                    Charset.forName(
+                                        "UTF-8"
+                                    )
+                                )
+                            )
+                        }
+                        connection.inputStream.bufferedReader().use { it.readText() }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        throw e
+                    }
+                }
+            }
+
+            val response = deferred.await()
+            gson.fromJson<List<GameCell>>(response, object : TypeToken<List<GameCell>>() {}.type)
+        }
 
     private fun makeRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {

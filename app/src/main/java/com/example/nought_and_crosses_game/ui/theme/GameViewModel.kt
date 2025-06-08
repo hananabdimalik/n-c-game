@@ -90,7 +90,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun updateGrid(position: Int) {
         viewModelScope.launch {
             runCatching {
-                repository.updateBoard(position)
+                val player = state.value.gameSession?.players?.first { it.id == id }
+                if (player != null) {
+                    repository.updateBoard(player, position)
+                }
             }
         }
     }
