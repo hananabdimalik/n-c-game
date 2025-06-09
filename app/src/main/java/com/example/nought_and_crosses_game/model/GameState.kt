@@ -13,7 +13,8 @@ enum class GameState {
 data class GameSession(
     val players: List<Player> = emptyList(),
     val hasGameBegan: Boolean = false,
-    val gameState: GameState = GameState.None
+    val gameState: GameState = GameState.None,
+    val currentPlayer: Player? = null
 )
 
 data class Player(val name: String, val id: String, val gamePiece: GamePieces)

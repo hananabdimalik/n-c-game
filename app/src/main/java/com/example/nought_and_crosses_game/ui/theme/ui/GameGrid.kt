@@ -86,10 +86,17 @@ fun GameGrid(
         }
 
         if (state.gameSession?.hasGameBegan == false && state.gameSession.players.isNotEmpty() && state.gameSession.gameState != GameState.None) {
-            Text(
-                text = "Game over: ${state.gameSession.gameState}",
-                modifier = Modifier.padding(start = 150.dp)
-            )
+            if (state.gameSession.gameState == GameState.Win) {
+                Text(
+                    text = "${state.gameSession.currentPlayer?.name} is the winner",
+                    modifier = Modifier.padding(start = 120.dp)
+                )
+            } else {
+                Text(
+                    text = "${state.gameSession.gameState} - Reset to play again",
+                    modifier = Modifier.padding(start = 150.dp)
+                )
+            }
         }
 
         Button(
@@ -118,7 +125,7 @@ private fun AddPlayer(
             singleLine = true
         )
         Spacer(Modifier.weight(1f))
-        Button(onJoinTapped, modifier = Modifier.padding(top = 15.dp, end = 20.dp)) {
+        Button(onJoinTapped, modifier = Modifier.padding(top = 25.dp, end = 20.dp)) {
             Text("Join")
         }
     }
