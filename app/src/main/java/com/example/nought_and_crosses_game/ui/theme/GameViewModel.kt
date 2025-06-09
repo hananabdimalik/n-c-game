@@ -16,7 +16,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class GameViewModel(private val repository: GameRepository) : ViewModel() {
+class GameViewModel() : ViewModel() {
+    private val repository = GameRepository()
 
     data class State(
         val input: String? = null,
@@ -90,7 +91,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun updateGrid(position: Int) {
         viewModelScope.launch {
             runCatching {
-                // bug -> new id made when app is restarted. Should use one from the server -> if lifecycle has ended -> call restart
                 val player = state.value.gameSession?.players?.first { it.id == id }
                 if (player != null) {
                     repository.updateBoard(player, position)
@@ -139,7 +139,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
 
-    fun onResume(){
-        onResetTapped()
+    fun onStop() {
+        viewModelScope.launch {
+            runCatching {
+                repository.restartGame()
+            }.onSuccess { result ->
+                _state.update { it.copy(gameSession = result) }
+            }.onFailure { }
+        }
     }
 }

@@ -25,11 +25,14 @@ class GameRepository {
     suspend fun addPlayer(player: Player): GameSession = addPlayer(player, "join")
         .await()
 
-    suspend fun getGameSession(): GameSession = makeGameSessionRequest().await()
+    suspend fun getGameSession(): GameSession =
+        makeGameSessionRequest("gameSession").await()
 
-    private fun makeGameSessionRequest() = CoroutineScope(Dispatchers.Main).async {
+    suspend fun restartGame(): GameSession = makeGameSessionRequest("restartGame").await()
+
+    private fun makeGameSessionRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
         val deferred = async {
-            val url = URL("http://10.0.2.2:8080/gameSession")
+            val url = URL("http://10.0.2.2:8080/$path")
 
             withContext(Dispatchers.IO) {
                 try {
