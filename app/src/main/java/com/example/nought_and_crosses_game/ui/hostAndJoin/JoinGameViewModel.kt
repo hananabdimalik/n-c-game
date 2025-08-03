@@ -42,7 +42,7 @@ class JoinGameViewModel : ViewModel() {
             runCatching {
                 state.value.input?.let {
                     val player = Player(name = it, id = id, gamePiece = GamePieces.Unplayed)
-                    state.value.input?.let { repository.addPlayer(player) }
+                    state.value.input?.let { repository.joinGameSession(player) }
                 }
             }.fold(
                 onSuccess = { result ->

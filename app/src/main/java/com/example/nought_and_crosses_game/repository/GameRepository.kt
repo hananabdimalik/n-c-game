@@ -26,7 +26,7 @@ class GameRepository {
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
-    suspend fun addPlayer(player: Player): String = addPlayer(player, "joinSession")
+    suspend fun joinGameSession(player: Player): String = joinGameSession(player, "joinSession")
         .await()
 
     suspend fun getGameSession(): GameSession =
@@ -121,7 +121,7 @@ class GameRepository {
         Gson().fromJson<List<GameCell>>(responseJson, object : TypeToken<List<GameCell>>() {}.type)
     }
 
-    private fun addPlayer(player: Player, path: String) =
+    private fun joinGameSession(player: Player, path: String) =
         CoroutineScope(Dispatchers.Main).async {
             val gson = Gson()
             val url = URL("http://10.0.2.2:8080/$path")
