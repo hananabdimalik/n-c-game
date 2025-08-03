@@ -1,4 +1,4 @@
-package com.example.nought_and_crosses_game.ui.theme
+package com.example.nought_and_crosses_game.ui.gameBoard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +21,7 @@ class GameViewModel() : ViewModel() {
 
     data class State(
         val input: String? = null,
-        val gameSession: GameSession? = null,
+        val gameSession: GameSession = GameSession(),
         val gameCells: List<GameCell> = List(9) { GameCell(GamePieces.Unplayed, it) },
         val gameState: GameState = GameState.None
     )
@@ -37,15 +37,11 @@ class GameViewModel() : ViewModel() {
             getGameBoard()
         }
 
-        if (state.value.gameSession?.hasGameBegan == false) {
-            onJoinTapped() // only ask for username if game hasnt started
-        }
-
         if (state.value.gameSession == null) { // double check this
             loadGameSession()
         }
 
-        if (state.value.gameSession?.gameState != GameState.None) {
+        if (state.value.gameSession.gameState != GameState.None) {
             updateGameState()
         }
     }
@@ -91,10 +87,8 @@ class GameViewModel() : ViewModel() {
     fun updateGrid(position: Int) {
         viewModelScope.launch {
             runCatching {
-                val player = state.value.gameSession?.players?.first { it.id == id }
-                if (player != null) {
-                    repository.updateBoard(player, position)
-                }
+                val player = state.value.gameSession.players.first { it.id == id }
+                repository.updateBoard(player, position)
             }
         }
     }
@@ -108,7 +102,7 @@ class GameViewModel() : ViewModel() {
                     it.copy(
                         gameCells = result,
                         gameState = GameState.None,
-                        gameSession = state.value.gameSession?.copy(hasGameBegan = false)
+                        gameSession = state.value.gameSession.copy(hasGameBegan = false)
                     )
                 }
             }.onFailure {
@@ -117,29 +111,31 @@ class GameViewModel() : ViewModel() {
         }
     } // should this be tappable if there's one player?
 
-    fun onJoinTapped() {
-        viewModelScope.launch {
-            runCatching {
-                state.value.input?.let {
-                    val player =
-                        Player(name = it, id = id, gamePiece = GamePieces.Unplayed)
-                    state.value.input?.let { repository.addPlayer(player) }
-                }
-            }.onSuccess { gameSession ->
-                _state.update { it.copy(gameSession = gameSession, input = null) }
-            }.onFailure {
-                it.stackTrace
-            }
-        }
-    }
+//    fun onJoinTapped() {
+//        viewModelScope.launch {
+//            runCatching {
+//                state.value.input?.let {
+//                    val player =
+//                        Player(name = it, id = id, gamePiece = GamePieces.Unplayed)
+//                    state.value.input?.let { repository.addPlayer(player) }
+//                }
+//            }.onSuccess { gameSession ->
+//                gameSession?.let {
+//                    _state.update { it.copy(gameSession = gameSession, input = null) }
+//                }
+//            }.onFailure {
+//                it.stackTrace
+//            }
+//        }
+//    }
 
-    fun onValueChanged(input: String) {
-        if (input.isNotEmpty()) {
-            _state.update { it.copy(input = input.replaceFirstChar { letter -> letter.uppercase() }) } // capitalise first letter
-        }
-    }
+//    fun onValueChanged(input: String) {
+//        if (input.isNotEmpty()) {
+//            _state.update { it.copy(input = input.replaceFirstChar { letter -> letter.uppercase() }) } // capitalise first letter
+//        }
+//    }
 
-    fun onStop() {
+    fun onStop() { // check rotation
         viewModelScope.launch {
             runCatching {
                 repository.restartGame()

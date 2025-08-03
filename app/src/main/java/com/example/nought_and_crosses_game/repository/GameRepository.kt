@@ -15,6 +15,10 @@ import java.net.URL
 import java.nio.charset.Charset
 
 class GameRepository {
+    val gson = Gson()
+    suspend fun hostGameSession(player: Player): GameSession =
+        makeGameSessionRequest("hostSession", player = player).await()
+
     suspend fun getBoardState(): List<GameCell> = makeRequest("gameBoard").await()
 
     suspend fun updateBoard(player: Player, position: Int): List<GameCell> =
@@ -22,7 +26,7 @@ class GameRepository {
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
-    suspend fun addPlayer(player: Player): GameSession = addPlayer(player, "join")
+    suspend fun addPlayer(player: Player): String = addPlayer(player, "joinSession")
         .await()
 
     suspend fun getGameSession(): GameSession =
@@ -30,24 +34,38 @@ class GameRepository {
 
     suspend fun restartGame(): GameSession = makeGameSessionRequest("restartGame").await()
 
-    private fun makeGameSessionRequest(path: String) = CoroutineScope(Dispatchers.Main).async {
-        val deferred = async {
-            val url = URL("http://10.0.2.2:8080/$path")
+    private fun makeGameSessionRequest(path: String, player: Player? = null) =
+        CoroutineScope(Dispatchers.Main).async {
+            val deferred = async {
 
-            withContext(Dispatchers.IO) {
-                try {
-                    val urlConnection = url.openConnection()
-                    val inputStream = urlConnection.getInputStream()
-                    inputStream.bufferedReader(Charset.forName("UTF-8")).use { it.readText() }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    throw e
+                val url = URL("http://10.0.2.2:8080/$path")
+                val connection = url.openConnection() as HttpURLConnection
+
+                withContext(Dispatchers.IO) {
+                    try {
+                        connection.requestMethod = "POST"
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        connection.doOutput = true
+
+                        val jsonBody = gson.toJson(player)
+                        connection.outputStream.use {
+                            it.write(jsonBody.toByteArray(Charset.forName("UTF-8")))
+                        }
+
+                        val inputStream = connection.getInputStream()
+                        inputStream.bufferedReader(Charset.forName("UTF-8")).use { it.readText() }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        throw e
+                    }
                 }
             }
+            val response = deferred.await()
+            Gson().fromJson<GameSession>(
+                response,
+                object : TypeToken<GameSession>() {}.type
+            )
         }
-        val response = deferred.await()
-        Gson().fromJson<GameSession>(response, object : TypeToken<GameSession>() {}.type)
-    }
 
     private fun updateBoardPostRequest(player: Player, path: String) =
         CoroutineScope(Dispatchers.Main).async {
@@ -135,6 +153,6 @@ class GameRepository {
                 }
             }
 
-            gson.fromJson<GameSession>(response, object : TypeToken<GameSession>() {}.type)
+            gson.fromJson<String>(response, object : TypeToken<String>() {}.type)
         }
 }
