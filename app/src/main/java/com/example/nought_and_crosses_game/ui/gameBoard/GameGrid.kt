@@ -1,5 +1,7 @@
 package com.example.nought_and_crosses_game.ui.gameBoard
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,19 +38,23 @@ import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 @Composable
 fun GameView(
     viewModel: GameViewModel = viewModel(),
-    playerNames: List<String>
+    playerNames: List<String>, context: Context?
 ) {
 
     val state = viewModel.state.collectAsStateWithLifecycle()
 
-    Column(verticalArrangement = Arrangement.spacedBy(30.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(30.dp),
+        modifier = Modifier.padding(top = 40.dp)
+    ) {
         PlayerNamesView(playerNames)
 
         GameGrid(
             viewModel,
             hasGameBegan = state.value.gameSession.hasGameBegan,
             gameState = state.value.gameState,
-            gameCells = state.value.gameCells
+            gameCells = state.value.gameCells,
+            context = context
         )
 
         GameOutcomeTextView(
@@ -65,8 +71,8 @@ private fun GameGrid(
     viewModel: GameViewModel = viewModel(),
     hasGameBegan: Boolean,
     gameState: GameState,
-    gameCells: List<GameCell>
-
+    gameCells: List<GameCell>,
+    context: Context?
 ) {
     val gridSize = 9
 
@@ -98,7 +104,8 @@ private fun GameGrid(
                     y = y,
                     gamePiece = gameCells[i].piece,
                     onCellTapped = { viewModel.updateGrid(i) },
-                    hasGameBegan = !hasGameBegan && gameState != GameState.None
+                    hasGameBegan = !hasGameBegan && gameState != GameState.None,
+                    context = context
                 )
                 val mod = i % 3
                 if (mod == 2) {
@@ -128,7 +135,7 @@ private fun GridCell(
     y: Int,
     gamePiece: GamePieces,
     onCellTapped: () -> Unit,
-    hasGameBegan: Boolean
+    hasGameBegan: Boolean, context: Context?
 ) {
     val density = LocalDensity.current
     val xInDp = with(density) { x.dp }
@@ -143,6 +150,9 @@ private fun GridCell(
             .size(90.dp)
             .offset(x = xInDp, y = yInDp)
             .clickable(enabled = !hasGameBegan) {
+                val toast =
+                    Toast.makeText(context, "Waiting for a player to join", Toast.LENGTH_SHORT)
+                toast.show()
                 onCellTapped()
             }
     ) {
@@ -178,15 +188,17 @@ private fun GameOutcomeTextView(
 }
 
 @Composable
-private fun PlayerNamesView(playerNames: List<String>) {
+private fun PlayerNamesView(playerNames: List<String?>) {
     if (playerNames.isNotEmpty()) {
         Row(modifier = Modifier.padding(start = 140.dp)) {
-            Text(
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = Modifier
-                    .padding(top = 20.dp),
-                text = playerNames.first()
-            )
+            playerNames.first()?.let { name ->
+                Text(
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    modifier = Modifier
+                        .padding(top = 20.dp),
+                    text = name
+                )
+            }
 
             Text(
                 style = TextStyle(fontSize = 14.sp),
@@ -194,13 +206,17 @@ private fun PlayerNamesView(playerNames: List<String>) {
                 modifier = Modifier
                     .padding(top = 20.dp),
             )
-            Text(
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = Modifier
-                    .padding(top = 20.dp),
+            if (playerNames.size == 2) {
+                playerNames.last()?.let { name ->
+                    Text(
+                        style = TextStyle(fontWeight = FontWeight.Bold),
+                        modifier = Modifier
+                            .padding(top = 20.dp),
 
-                text = playerNames.last()
-            )
+                        text = name
+                    )
+                }
+            }
         }
     }
 }
@@ -212,7 +228,8 @@ fun GameGridPreview() {
         GameGrid(
             hasGameBegan = true,
             gameState = GameState.Win,
-            gameCells = List(9) { GameCell(GamePieces.Cross, it) })
+            gameCells = List(9) { GameCell(GamePieces.Cross, it) }, context = null
+        )
     }
 }
 
@@ -220,7 +237,7 @@ fun GameGridPreview() {
 @Composable
 fun PreviewGridCell() {
     NoughtandcrossesgameTheme {
-        GridCell(0, 0, GamePieces.Nought, {}, false)
+        GridCell(0, 0, GamePieces.Nought, {}, false, context = null)
     }
 }
 
@@ -252,6 +269,6 @@ fun GameOutcomePreview() {
 
 @Preview
 @Composable
-fun NoughtAndCrossGamePreview(){
-    GameView(playerNames = listOf("Mark, Lily"))
+fun NoughtAndCrossGamePreview() {
+    GameView(playerNames = listOf("Mark, Lily"), context = null)
 }

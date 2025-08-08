@@ -11,6 +11,7 @@ enum class GameState {
 }
 
 data class GameSession(
+    val sessionId: String? = null,
     val players: List<Player> = emptyList(),
     val hasGameBegan: Boolean = false,
     val gameState: GameState = GameState.None,

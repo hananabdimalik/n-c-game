@@ -1,5 +1,6 @@
 package com.example.nought_and_crosses_game.navigation
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -7,52 +8,56 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.example.nought_and_crosses_game.ui.gameBoard.GameView
 import com.example.nought_and_crosses_game.ui.hostAndJoin.HostGameView
-import com.example.nought_and_crosses_game.ui.hostAndJoin.JoinGameView
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Serializable
-data object HostGameUi : NavKey
+data class HostGameUi(val playerId: String) : NavKey
 
 @Serializable
-data class JoinGameUi(val hasHost: Boolean, val hostName: String) : NavKey
-
-@Serializable
-data class GameUI(val hasGameStarted: Boolean, val playerNames: List<String>) : NavKey
+data class GameUI(
+    val hasGameStarted: Boolean,
+    val playerNames: List<String>,
+    val gameSessionId: String?
+) : NavKey
 
 @Composable
-fun NavigationRoot() {
-    val backStack = rememberNavBackStack(HostGameUi)
+fun NavigationRoot(context: Context) {
+    val id = UUID.randomUUID().toString()
+    val backStack = rememberNavBackStack(HostGameUi(id))
     NavDisplay(
         backStack = backStack, //At creation, each NavBackStackEntry starts in Lifecycle.State.INITIALIZED
         entryProvider = { key ->
             when (key) {
                 is HostGameUi -> {
                     NavEntry(key) { // handle navigating back to previous page
-                        HostGameView(onHostGameTapped = { hostName, hasHost ->
-                            backStack.add(JoinGameUi(hostName = hostName, hasHost = hasHost))
-                        })
-                    }
-                }
-
-                is JoinGameUi -> {
-                    NavEntry(key) {
-                        JoinGameView(
-                            onGameStarted = { playerNames ->
+                        HostGameView(
+                            onHostGameTapped = { hasGameStarted, playerNames, gameSessionId ->
                                 backStack.add(
                                     GameUI(
-                                        hasGameStarted = key.hasHost,
-                                        playerNames = playerNames
+                                        hasGameStarted = hasGameStarted,
+                                        playerNames = playerNames,
+                                        gameSessionId = gameSessionId
                                     )
                                 )
                             },
-                            hostName = key.hostName
+                            onJoinGameTapped = { hasGameStarted, playerNames, gameSessionId ->
+                                backStack.add(
+                                    GameUI(
+                                        hasGameStarted = hasGameStarted,
+                                        playerNames = playerNames,
+                                        gameSessionId = gameSessionId
+                                    )
+                                )
+                            },
+                            context = context
                         )
                     }
                 }
 
                 is GameUI -> {
                     NavEntry(key) {
-                        GameView(playerNames = key.playerNames)
+                        GameView(playerNames = key.playerNames, context = context)
                     }
                 }
 

@@ -6,7 +6,6 @@ import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.GameState
-import com.example.nought_and_crosses_game.model.Player
 import com.example.nought_and_crosses_game.repository.GameRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

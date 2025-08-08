@@ -2,6 +2,7 @@ package com.example.nought_and_crosses_game.repository
 
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GameSession
+import com.example.nought_and_crosses_game.model.JoinGameData
 import com.example.nought_and_crosses_game.model.Player
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -26,7 +27,7 @@ class GameRepository {
 
     suspend fun resetGameBoard(): List<GameCell> = makeRequest("resetGame").await()
 
-    suspend fun joinGameSession(player: Player): String = joinGameSession(player, "joinSession")
+    suspend fun joinGameSession(player: Player): JoinGameData = joinGameSession(player, "joinSession")
         .await()
 
     suspend fun getGameSession(): GameSession =
@@ -153,6 +154,6 @@ class GameRepository {
                 }
             }
 
-            gson.fromJson<String>(response, object : TypeToken<String>() {}.type)
+            gson.fromJson<JoinGameData>(response, object : TypeToken<JoinGameData>() {}.type)
         }
 }
