@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nought_and_crosses_game.R
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
+import com.example.nought_and_crosses_game.model.GameSessionState
 import com.example.nought_and_crosses_game.model.GameState
 import com.example.nought_and_crosses_game.model.Player
 import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
@@ -38,7 +39,9 @@ import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 @Composable
 fun GameView(
     viewModel: GameViewModel = viewModel(),
-    playerNames: List<String>, context: Context?
+    playerName: String,
+    context: Context?,
+    playerId: String
 ) {
 
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -47,18 +50,19 @@ fun GameView(
         verticalArrangement = Arrangement.spacedBy(30.dp),
         modifier = Modifier.padding(top = 40.dp)
     ) {
-        PlayerNamesView(playerNames)
+        PlayerNamesView(playerName, state.value.gameSession.players)
 
         GameGrid(
             viewModel,
-            hasGameBegan = state.value.gameSession.hasGameBegan,
+            hasGameBegan = state.value.gameSession.gameSessionState == GameSessionState.Started,
             gameState = state.value.gameState,
             gameCells = state.value.gameCells,
-            context = context
+            context = context,
+            playerId = playerId
         )
 
         GameOutcomeTextView(
-            hasGameBegan = state.value.gameSession.hasGameBegan,
+            hasGameBegan = state.value.gameSession.gameSessionState == GameSessionState.Started,
             players = state.value.gameSession.players,
             gameState = state.value.gameState,
             currentPlayer = state.value.gameSession.currentPlayer
@@ -72,7 +76,8 @@ private fun GameGrid(
     hasGameBegan: Boolean,
     gameState: GameState,
     gameCells: List<GameCell>,
-    context: Context?
+    context: Context?,
+    playerId: String
 ) {
     val gridSize = 9
 
@@ -103,8 +108,8 @@ private fun GameGrid(
                     x = x,
                     y = y,
                     gamePiece = gameCells[i].piece,
-                    onCellTapped = { viewModel.updateGrid(i) },
-                    hasGameBegan = !hasGameBegan && gameState != GameState.None,
+                    onCellTapped = { viewModel.updateGrid(i, playerId) },
+                    hasGameBegan = hasGameBegan,
                     context = context
                 )
                 val mod = i % 3
@@ -122,7 +127,7 @@ private fun GameGrid(
             modifier = Modifier
                 .padding(start = 130.dp)
                 .padding(top = 20.dp),
-            enabled = !hasGameBegan
+            enabled = hasGameBegan
         ) {
             Text("Reset Game")
         }
@@ -149,11 +154,14 @@ private fun GridCell(
         modifier = Modifier
             .size(90.dp)
             .offset(x = xInDp, y = yInDp)
-            .clickable(enabled = !hasGameBegan) {
-                val toast =
-                    Toast.makeText(context, "Waiting for a player to join", Toast.LENGTH_SHORT)
-                toast.show()
-                onCellTapped()
+            .clickable {
+                if (!hasGameBegan) {
+                    val toast =
+                        Toast.makeText(context, "Waiting for a player to join", Toast.LENGTH_SHORT)
+                    toast.show()
+                } else {
+                    onCellTapped()
+                }
             }
     ) {
         image?.let {
@@ -188,17 +196,36 @@ private fun GameOutcomeTextView(
 }
 
 @Composable
-private fun PlayerNamesView(playerNames: List<String?>) {
-    if (playerNames.isNotEmpty()) {
-        Row(modifier = Modifier.padding(start = 140.dp)) {
-            playerNames.first()?.let { name ->
-                Text(
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    modifier = Modifier
-                        .padding(top = 20.dp),
-                    text = name
-                )
-            }
+private fun PlayerNamesView(playerName: String, players: List<Player>) {
+    Row(modifier = Modifier.padding(start = 140.dp)) {
+        if (players.size == 2) {
+            Text(
+                style = TextStyle(fontWeight = FontWeight.Bold),
+                modifier = Modifier
+                    .padding(top = 20.dp),
+
+                text = players.first().name
+            )
+            Text(
+                style = TextStyle(fontSize = 14.sp),
+                text = " VS ",
+                modifier = Modifier
+                    .padding(top = 20.dp),
+            )
+            Text(
+                style = TextStyle(fontWeight = FontWeight.Bold),
+                modifier = Modifier
+                    .padding(top = 20.dp),
+
+                text = players.last().name
+            )
+        } else {
+            Text(
+                style = TextStyle(fontWeight = FontWeight.Bold),
+                modifier = Modifier
+                    .padding(top = 20.dp),
+                text = playerName
+            )
 
             Text(
                 style = TextStyle(fontSize = 14.sp),
@@ -206,17 +233,6 @@ private fun PlayerNamesView(playerNames: List<String?>) {
                 modifier = Modifier
                     .padding(top = 20.dp),
             )
-            if (playerNames.size == 2) {
-                playerNames.last()?.let { name ->
-                    Text(
-                        style = TextStyle(fontWeight = FontWeight.Bold),
-                        modifier = Modifier
-                            .padding(top = 20.dp),
-
-                        text = name
-                    )
-                }
-            }
         }
     }
 }
@@ -228,7 +244,9 @@ fun GameGridPreview() {
         GameGrid(
             hasGameBegan = true,
             gameState = GameState.Win,
-            gameCells = List(9) { GameCell(GamePieces.Cross, it) }, context = null
+            gameCells = List(9) { GameCell(GamePieces.Cross, it) },
+            context = null,
+            playerId = ""
         )
     }
 }
@@ -245,7 +263,7 @@ fun PreviewGridCell() {
 @Composable
 fun PlayerNamesPreview() {
     NoughtandcrossesgameTheme {
-        PlayerNamesView(listOf())
+        PlayerNamesView("", listOf())
     }
 }
 
@@ -270,5 +288,5 @@ fun GameOutcomePreview() {
 @Preview
 @Composable
 fun NoughtAndCrossGamePreview() {
-    GameView(playerNames = listOf("Mark, Lily"), context = null)
+    GameView(playerName = "", context = null, playerId = "")
 }

@@ -5,39 +5,35 @@ import androidx.lifecycle.viewModelScope
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GamePieces
 import com.example.nought_and_crosses_game.model.GameSession
+import com.example.nought_and_crosses_game.model.GameSessionState
 import com.example.nought_and_crosses_game.model.GameState
-import com.example.nought_and_crosses_game.repository.GameRepository
+import com.example.nought_and_crosses_game.repository.GameRepositoryImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 class GameViewModel() : ViewModel() {
-    private val repository = GameRepository()
+    private val repository = GameRepositoryImpl()
 
     data class State(
         val input: String? = null,
         val gameSession: GameSession = GameSession(),
         val gameCells: List<GameCell> = List(9) { GameCell(GamePieces.Unplayed, it) },
-        val gameState: GameState = GameState.None
+        val gameState: GameState = GameState.None,
+        val gameSessionState: GameSessionState = GameSessionState.Ended
     )
 
     private val _state = MutableStateFlow(State())
-
     val state: StateFlow<State> = _state
-    private val id = UUID.randomUUID().toString()
 
     init {
         // only check gameState if game is still going
         if (state.value.gameState == GameState.None) {
+            loadGameState()
             getGameBoard()
-        }
-
-        if (state.value.gameSession == null) { // double check this
-            loadGameSession()
         }
 
         if (state.value.gameSession.gameState != GameState.None) {
@@ -45,20 +41,21 @@ class GameViewModel() : ViewModel() {
         }
     }
 
-    private fun loadGameSession() {
+    private fun loadGameState() {
         viewModelScope.launch {
             while (isActive) {
                 runCatching {
-                    repository.getGameSession()
+                    repository.loadGameState(path = loadGameStatePath)
                 }.onSuccess { result ->
                     _state.update {
                         it.copy(
-                            gameSession = result,
+                            gameSession = result, gameSessionState = result.gameSessionState
                         )
                     }
                 }.onFailure {
-                    // handle failure -> throw an exception and translate to a dialog
+                    // handle failure -> by showing an error message
                 }
+                delay(5000)
             }
         }
     }
@@ -71,7 +68,7 @@ class GameViewModel() : ViewModel() {
         viewModelScope.launch {
             while (isActive) {
                 runCatching {
-                    repository.getBoardState()
+                    repository.getBoardState(path = gameBoardPath)
                 }.onSuccess { result ->
                     _state.update { it.copy(gameCells = result) }
                 }.onFailure {
@@ -83,64 +80,48 @@ class GameViewModel() : ViewModel() {
         }
     }
 
-    fun updateGrid(position: Int) {
+    fun updateGrid(position: Int, playerId: String) {
         viewModelScope.launch {
             runCatching {
-                val player = state.value.gameSession.players.first { it.id == id }
-                repository.updateBoard(player, position)
+                val player = state.value.gameSession.players.first { it.id == playerId }
+                repository.updateBoard(updateBoardPath, player, position)
             }
         }
     }
 
-    fun onResetTapped() {
+    fun onResetTapped() { // provide sessionId
         viewModelScope.launch {
             runCatching {
-                repository.resetGameBoard()
+                repository.resetGameBoard(path = resetGamePath)
             }.onSuccess { result ->
                 _state.update {
                     it.copy(
                         gameCells = result,
                         gameState = GameState.None,
-                        gameSession = state.value.gameSession.copy(hasGameBegan = false)
+                        gameSession = state.value.gameSession.copy(gameSessionState = GameSessionState.Ended) // double check that
                     )
                 }
             }.onFailure {
                 // handle failure
             }
         }
-    } // should this be tappable if there's one player?
-
-//    fun onJoinTapped() {
-//        viewModelScope.launch {
-//            runCatching {
-//                state.value.input?.let {
-//                    val player =
-//                        Player(name = it, id = id, gamePiece = GamePieces.Unplayed)
-//                    state.value.input?.let { repository.addPlayer(player) }
-//                }
-//            }.onSuccess { gameSession ->
-//                gameSession?.let {
-//                    _state.update { it.copy(gameSession = gameSession, input = null) }
-//                }
-//            }.onFailure {
-//                it.stackTrace
-//            }
-//        }
-//    }
-
-//    fun onValueChanged(input: String) {
-//        if (input.isNotEmpty()) {
-//            _state.update { it.copy(input = input.replaceFirstChar { letter -> letter.uppercase() }) } // capitalise first letter
-//        }
-//    }
+    }
 
     fun onStop() { // check rotation
         viewModelScope.launch {
             runCatching {
-                repository.restartGame()
+                repository.restartGame(restartGameSessionPath)
             }.onSuccess { result ->
                 _state.update { it.copy(gameSession = result) }
             }.onFailure { }
         }
+    }
+
+    companion object {
+        private const val loadGameStatePath = "loadGameSession"
+        private const val gameBoardPath = "gameBoard"
+        private const val updateBoardPath = "updateBoard"
+        private const val resetGamePath = "resetGame"
+        private const val restartGameSessionPath = "restartGameSession"
     }
 }

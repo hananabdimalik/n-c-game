@@ -19,8 +19,8 @@ import com.example.nought_and_crosses_game.ui.theme.NoughtandcrossesgameTheme
 fun HostGameView(
     context: Context?,
     viewModel: HostAndJoinGameViewModel = viewModel(),
-    onHostGameTapped: (Boolean, List<String>, String) -> Unit,
-    onJoinGameTapped: (Boolean, List<String>, String) -> Unit
+    onHostGameTapped: (Boolean, String, String, String) -> Unit,
+    onJoinGameTapped: (Boolean, String, String, String) -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     Column(
@@ -63,7 +63,8 @@ fun HostGameView(
                 onHostGameTapped(
                     state.value.hasGameStarted,
                     state.value.playerNames,
-                    state.value.gameSessionId.orEmpty()
+                    state.value.gameSessionId.orEmpty(),
+                    state.value.playerId
                 )
             }
         }
@@ -73,7 +74,8 @@ fun HostGameView(
                 onJoinGameTapped(
                     state.value.hasGameStarted,
                     state.value.playerNames,
-                    gameId
+                    gameId,
+                    state.value.playerId
                 )
             }
         }
@@ -91,8 +93,8 @@ fun HostGameView(
 fun HostGamePreview() {
     NoughtandcrossesgameTheme {
         HostGameView(
-            onHostGameTapped = { _, _, _ -> },
-            onJoinGameTapped = { _, _, _ -> },
+            onHostGameTapped = { _, _, _ , None-> },
+            onJoinGameTapped = { _, _, _ , None-> },
             context = null,
         )
     }

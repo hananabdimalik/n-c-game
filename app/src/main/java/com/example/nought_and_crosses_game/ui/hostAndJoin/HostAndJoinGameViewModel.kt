@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nought_and_crosses_game.model.GamePieces.Unplayed
 import com.example.nought_and_crosses_game.model.GameSessionState
 import com.example.nought_and_crosses_game.model.Player
-import com.example.nought_and_crosses_game.repository.GameRepository
+import com.example.nought_and_crosses_game.repository.GameRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -13,8 +13,13 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 class HostAndJoinGameViewModel : ViewModel() {
-    private val gameRepository = GameRepository()
+    private val gameRepository = GameRepositoryImpl()
     private val id = UUID.randomUUID().toString()
+
+    companion object {
+        private const val hostGamePath = "hostSession"
+        private const val joinGamePath = "joinSession"
+    }
 
     data class HostState(
         val gameSessionId: String? = null,
@@ -22,7 +27,8 @@ class HostAndJoinGameViewModel : ViewModel() {
         val input: String? = null,
         val hasGameStarted: Boolean = false,
         val errorMessage: String? = null,
-        val playerNames: List<String> = emptyList()
+        val playerNames: String = "",
+        val playerId: String = ""
     )
 
     private val _state = MutableStateFlow(HostState())
@@ -37,14 +43,18 @@ class HostAndJoinGameViewModel : ViewModel() {
         val playerName = state.value.input
         viewModelScope.launch {
             runCatching {
-                gameRepository.hostGameSession(Player(playerName ?: "", id, Unplayed))
+                gameRepository.hostGameSession(
+                    path = hostGamePath,
+                    player = Player(playerName ?: "", id, Unplayed)
+                )
             }.fold(
                 onSuccess = { result ->
                     _state.update {
                         it.copy(
                             hasHost = true,
                             gameSessionId = result.sessionId,
-                            playerNames = result.players.map { player -> player.name }
+                            playerNames = result.players.first().name,
+                            playerId = id
                         )
                     }
                 },
@@ -58,14 +68,15 @@ class HostAndJoinGameViewModel : ViewModel() {
 
         viewModelScope.launch {
             runCatching {
-                gameRepository.joinGameSession(player)
+                gameRepository.joinGameSession(path = joinGamePath, player = player)
             }.fold(
                 onSuccess = { result ->
                     _state.update {
                         it.copy(
                             hasGameStarted = result.gameSessionState == GameSessionState.Started,
-                            playerNames = result.playerNames,
-                            gameSessionId = result.gameSessionId
+                            playerNames = result.players.last().name,
+                            gameSessionId = result.sessionId,
+                            playerId = id
                         )
                     }
                 },

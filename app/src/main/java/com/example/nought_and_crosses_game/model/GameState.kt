@@ -1,5 +1,7 @@
 package com.example.nought_and_crosses_game.model
 
+import kotlinx.serialization.Serializable
+
 enum class GamePieces {
     Nought, Cross, Unplayed
 }
@@ -13,9 +15,15 @@ enum class GameState {
 data class GameSession(
     val sessionId: String? = null,
     val players: List<Player> = emptyList(),
-    val hasGameBegan: Boolean = false,
     val gameState: GameState = GameState.None,
-    val currentPlayer: Player? = null
+    val currentPlayer: Player? = null,
+    var gameSessionState: GameSessionState = GameSessionState.Ended,
+    val error: String? = null,
 )
 
 data class Player(val name: String, val id: String, val gamePiece: GamePieces)
+
+@Serializable
+enum class GameSessionState {
+    Waiting, Started, Ended
+}
