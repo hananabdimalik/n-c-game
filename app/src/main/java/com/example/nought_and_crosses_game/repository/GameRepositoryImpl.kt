@@ -3,6 +3,7 @@ package com.example.nought_and_crosses_game.repository
 import com.example.nought_and_crosses_game.model.GameCell
 import com.example.nought_and_crosses_game.model.GameSession
 import com.example.nought_and_crosses_game.model.Player
+import com.example.nought_and_crosses_game.model.RestartGame
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -119,7 +120,7 @@ class GameRepositoryImpl : GameRepository {
         return output.await()
     }
 
-    override suspend fun getBoardState(path: String): List<GameCell> {
+    override suspend fun getGameBoard(path: String): List<GameCell> {
         val output = CoroutineScope(Dispatchers.Main).async {
             val deferred = async {
                 val url = URL("http://10.0.2.2:8080/$path")
@@ -147,12 +148,13 @@ class GameRepositoryImpl : GameRepository {
     override suspend fun updateBoard(
         path: String,
         player: Player,
-        position: Int
+        position: Int,
+        sessionId: String
     ): List<GameCell> {
         val output = CoroutineScope(Dispatchers.Main).async {
             val gson = Gson()
             val deferred = async {
-                val url = URL("http://10.0.2.2:8080/$path/$position")
+                val url = URL("http://10.0.2.2:8080/$path/$position/$sessionId")
                 val connection = url.openConnection() as HttpURLConnection
 
                 withContext(Dispatchers.IO) {
@@ -185,6 +187,27 @@ class GameRepositoryImpl : GameRepository {
         return output.await()
     }
 
+    override suspend fun getGameState(path: String): GameSession {
+        val output = CoroutineScope(Dispatchers.Main).async {
+            val deferred = async {
+                val url = URL("http://10.0.2.2:8080/$path")
+
+                withContext(Dispatchers.IO) {
+                    try {
+                        val urlConnection = url.openConnection()
+                        IOUtils.toString(urlConnection.inputStream, Charset.forName("UTF-8"))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        throw e
+                    }
+                }
+            }
+            val responseJson = deferred.await()
+            Gson().fromJson<GameSession>(responseJson, object : TypeToken<GameSession>() {}.type)
+        }
+        return output.await()
+    }
+
     override suspend fun resetGameBoard(path: String): List<GameCell> { // requires gameSessionId
         val output = CoroutineScope(Dispatchers.Main).async {
             val deferred = async {
@@ -210,7 +233,7 @@ class GameRepositoryImpl : GameRepository {
         return output.await()
     }
 
-    override suspend fun restartGame(path: String): GameSession { // requires gameSessionId
+    override suspend fun restartGameSession(path: String): RestartGame { // requires gameSessionId
         val output = CoroutineScope(Dispatchers.Main).async {
             val deferred = async {
 
@@ -237,9 +260,9 @@ class GameRepositoryImpl : GameRepository {
                 }
             }
             val response = deferred.await()
-            Gson().fromJson<GameSession>(
+            Gson().fromJson<RestartGame>(
                 response,
-                object : TypeToken<GameSession>() {}.type
+                object : TypeToken<RestartGame>() {}.type
             )
         }
         return output.await()

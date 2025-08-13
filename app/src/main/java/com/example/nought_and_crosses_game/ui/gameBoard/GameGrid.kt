@@ -41,7 +41,8 @@ fun GameView(
     viewModel: GameViewModel = viewModel(),
     playerName: String,
     context: Context?,
-    playerId: String
+    playerId: String,
+    sessionId: String?
 ) {
 
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -55,16 +56,16 @@ fun GameView(
         GameGrid(
             viewModel,
             hasGameBegan = state.value.gameSession.gameSessionState == GameSessionState.Started,
-            gameState = state.value.gameState,
+            gameState = state.value.gameSession.gameState,
             gameCells = state.value.gameCells,
             context = context,
-            playerId = playerId
+            playerId = playerId,
+            sessionId = sessionId
         )
 
         GameOutcomeTextView(
-            hasGameBegan = state.value.gameSession.gameSessionState == GameSessionState.Started,
             players = state.value.gameSession.players,
-            gameState = state.value.gameState,
+            gameState = state.value.gameSession.gameState,
             currentPlayer = state.value.gameSession.currentPlayer
         )
     }
@@ -77,7 +78,8 @@ private fun GameGrid(
     gameState: GameState,
     gameCells: List<GameCell>,
     context: Context?,
-    playerId: String
+    playerId: String,
+    sessionId: String?
 ) {
     val gridSize = 9
 
@@ -108,7 +110,7 @@ private fun GameGrid(
                     x = x,
                     y = y,
                     gamePiece = gameCells[i].piece,
-                    onCellTapped = { viewModel.updateGrid(i, playerId) },
+                    onCellTapped = { viewModel.updateGrid(i, playerId, sessionId = sessionId) },
                     hasGameBegan = hasGameBegan,
                     context = context
                 )
@@ -127,7 +129,7 @@ private fun GameGrid(
             modifier = Modifier
                 .padding(start = 130.dp)
                 .padding(top = 20.dp),
-            enabled = hasGameBegan
+            enabled = !hasGameBegan
         ) {
             Text("Reset Game")
         }
@@ -175,12 +177,11 @@ private fun GridCell(
 
 @Composable
 private fun GameOutcomeTextView(
-    hasGameBegan: Boolean,
     players: List<Player>,
     gameState: GameState,
     currentPlayer: Player?
 ) {
-    if (!hasGameBegan && players.isNotEmpty() && gameState != GameState.None) {
+    if (players.isNotEmpty() && gameState != GameState.None) {
         if (gameState == GameState.Win) {
             Text(
                 text = "${currentPlayer?.name} is the winner",
@@ -246,7 +247,8 @@ fun GameGridPreview() {
             gameState = GameState.Win,
             gameCells = List(9) { GameCell(GamePieces.Cross, it) },
             context = null,
-            playerId = ""
+            playerId = "",
+            sessionId = ""
         )
     }
 }
@@ -272,7 +274,6 @@ fun PlayerNamesPreview() {
 fun GameOutcomePreview() {
     NoughtandcrossesgameTheme {
         GameOutcomeTextView(
-            hasGameBegan = false,
             players = listOf(
                 Player("Mark", "id", GamePieces.Nought), Player(
                     "Lily", "id",
@@ -288,5 +289,5 @@ fun GameOutcomePreview() {
 @Preview
 @Composable
 fun NoughtAndCrossGamePreview() {
-    GameView(playerName = "", context = null, playerId = "")
+    GameView(playerName = "", context = null, playerId = "", sessionId = "")
 }

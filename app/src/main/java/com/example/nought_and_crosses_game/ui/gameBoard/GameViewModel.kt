@@ -22,22 +22,16 @@ class GameViewModel() : ViewModel() {
         val input: String? = null,
         val gameSession: GameSession = GameSession(),
         val gameCells: List<GameCell> = List(9) { GameCell(GamePieces.Unplayed, it) },
-        val gameState: GameState = GameState.None,
-        val gameSessionState: GameSessionState = GameSessionState.Ended
     )
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state
 
     init {
-        // only check gameState if game is still going
-        if (state.value.gameState == GameState.None) {
+        if (state.value.gameSession.gameState == GameState.None) {
             loadGameState()
             getGameBoard()
-        }
-
-        if (state.value.gameSession.gameState != GameState.None) {
-            updateGameState()
+            getGameState()
         }
     }
 
@@ -49,47 +43,60 @@ class GameViewModel() : ViewModel() {
                 }.onSuccess { result ->
                     _state.update {
                         it.copy(
-                            gameSession = result, gameSessionState = result.gameSessionState
+                            gameSession = result
                         )
                     }
                 }.onFailure {
                     // handle failure -> by showing an error message
                 }
-                delay(5000)
+                delay(1000)
             }
         }
     }
 
-    private fun updateGameState() {
-        _state.update { it.copy(gameSession = state.value.gameSession) }
+    private fun getGameState() {
+        viewModelScope.launch {
+            while (isActive) {
+                runCatching {
+                    repository.getGameState(getGameStatePath)
+                }.onSuccess { result ->
+                    _state.update { it.copy(gameSession = result) }
+                }.onFailure {
+                    it
+                }
+            }
+            delay(1000)
+        }
     }
 
     private fun getGameBoard() {
         viewModelScope.launch {
             while (isActive) {
                 runCatching {
-                    repository.getBoardState(path = gameBoardPath)
+                    repository.getGameBoard(path = gameBoardPath)
                 }.onSuccess { result ->
                     _state.update { it.copy(gameCells = result) }
                 }.onFailure {
                     // handle failure
                     it.stackTrace
                 }
-                delay(500)
+                delay(1000)
             }
         }
     }
 
-    fun updateGrid(position: Int, playerId: String) {
+    fun updateGrid(position: Int, playerId: String, sessionId: String?) {
         viewModelScope.launch {
             runCatching {
                 val player = state.value.gameSession.players.first { it.id == playerId }
-                repository.updateBoard(updateBoardPath, player, position)
+                sessionId?.let {
+                    repository.updateBoard(updateBoardPath, player, position, it)
+                }
             }
         }
     }
 
-    fun onResetTapped() { // provide sessionId
+    fun onResetTapped() {
         viewModelScope.launch {
             runCatching {
                 repository.resetGameBoard(path = resetGamePath)
@@ -97,8 +104,6 @@ class GameViewModel() : ViewModel() {
                 _state.update {
                     it.copy(
                         gameCells = result,
-                        gameState = GameState.None,
-                        gameSession = state.value.gameSession.copy(gameSessionState = GameSessionState.Ended) // double check that
                     )
                 }
             }.onFailure {
@@ -110,9 +115,14 @@ class GameViewModel() : ViewModel() {
     fun onStop() { // check rotation
         viewModelScope.launch {
             runCatching {
-                repository.restartGame(restartGameSessionPath)
+                repository.restartGameSession(restartGameSessionPath)
             }.onSuccess { result ->
-                _state.update { it.copy(gameSession = result) }
+                _state.update {
+                    it.copy(
+                        gameSession = result.gameSession,
+                        gameCells = result.gameBoard
+                    )
+                }
             }.onFailure { }
         }
     }
@@ -123,5 +133,6 @@ class GameViewModel() : ViewModel() {
         private const val updateBoardPath = "updateBoard"
         private const val resetGamePath = "resetGame"
         private const val restartGameSessionPath = "restartGameSession"
+        private const val getGameStatePath = "getGameState"
     }
 }

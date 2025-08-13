@@ -61,7 +61,8 @@ fun NavigationRoot(context: Context) {
                         GameView(
                             playerName = key.playerNames,
                             context = context,
-                            playerId = key.playerId
+                            playerId = key.playerId,
+                            sessionId = key.gameSessionId
                         )
                     }
                 }
