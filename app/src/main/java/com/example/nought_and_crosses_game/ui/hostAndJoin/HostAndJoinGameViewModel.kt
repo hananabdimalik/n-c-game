@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.net.ConnectException
 import java.util.UUID
 
 class HostAndJoinGameViewModel : ViewModel() {
@@ -58,7 +59,13 @@ class HostAndJoinGameViewModel : ViewModel() {
                         )
                     }
                 },
-                onFailure = { it } // handle no connection error
+                onFailure = { error ->
+                    if (error is ConnectException) {
+                        _state.update { it.copy(errorMessage = "Server error - please try again") }
+                    } else {
+                        _state.update { it.copy(errorMessage = "Unable to host a game - please try again") }
+                    }
+                }
             )
         }
     }

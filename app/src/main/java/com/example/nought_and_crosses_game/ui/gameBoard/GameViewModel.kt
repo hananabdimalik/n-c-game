@@ -47,7 +47,7 @@ class GameViewModel() : ViewModel() {
                         )
                     }
                 }.onFailure {
-                    // handle failure -> by showing an error message
+                    _state.update { it.copy(gameSession = it.gameSession.copy(error = "Unable to get game state")) }
                 }
                 delay(1000)
             }
@@ -62,7 +62,7 @@ class GameViewModel() : ViewModel() {
                 }.onSuccess { result ->
                     _state.update { it.copy(gameSession = result) }
                 }.onFailure {
-                    it
+                    _state.update { it.copy(gameSession = it.gameSession.copy(error = "Unable to get game state")) }
                 }
             }
             delay(1000)
@@ -77,8 +77,7 @@ class GameViewModel() : ViewModel() {
                 }.onSuccess { result ->
                     _state.update { it.copy(gameCells = result) }
                 }.onFailure {
-                    // handle failure
-                    it.stackTrace
+                    _state.update { it.copy(gameSession = it.gameSession.copy(error = "Unable to load gameBoard")) }
                 }
                 delay(1000)
             }
@@ -92,6 +91,8 @@ class GameViewModel() : ViewModel() {
                 sessionId?.let {
                     repository.updateBoard(updateBoardPath, player, position, it)
                 }
+            }.onFailure {
+                _state.update { it.copy(gameSession = it.gameSession.copy(error = "Unable to update gameBoard")) }
             }
         }
     }
@@ -107,7 +108,7 @@ class GameViewModel() : ViewModel() {
                     )
                 }
             }.onFailure {
-                // handle failure
+                _state.update { it.copy(gameSession = it.gameSession.copy(error = "Unable to reset gameBoard")) }
             }
         }
     }
@@ -123,7 +124,9 @@ class GameViewModel() : ViewModel() {
                         gameCells = result.gameBoard
                     )
                 }
-            }.onFailure { }
+            }.onFailure {
+                _state.update { it.copy(gameSession = it.gameSession.copy(error = "Error")) }
+            }
         }
     }
 
